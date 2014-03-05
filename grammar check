@@ -1,0 +1,94 @@
+/*
+ 
+Проверить, можно ли заданную последовательность символов вывести по правилам грамматики:
+
+
+S -> AB|d
+A -> a{aC}|e
+B -> bB|epsilon
+C -> c
+ 
+Если возможно, построить цепочку вывода.
+
+ */
+
+#include <iostream>
+using namespace std;
+
+
+char myChar;
+void S ();
+void A ();
+void B ();
+void C ();
+
+void get_char () {
+    cin >> myChar;
+};
+
+void S () {
+    if (myChar ==  'd') {
+        cout << "S --> d, ";
+        get_char ();
+    }
+    else {
+        cout << "S --> AB, ";
+        A();
+        B();
+    }
+}
+
+void A () {
+    if (myChar == 'a') {
+        cout << "A --> a{aC}, ";
+        get_char ();
+        while (myChar == 'a') {
+            get_char ();
+            C ();
+        }
+    }
+    else if (myChar == 'e') {
+        cout << "A --> e, ";
+        get_char ();
+    }
+    else {
+        throw myChar;
+    }
+}
+
+void B () {
+    if (myChar == 'b') {
+        cout << "B --> bB, ";
+        get_char ();
+        B();
+    }
+    else if (myChar == '#') {
+        cout << "B --> epsilon " << endl;
+    }
+
+}
+
+void C () {
+    if (myChar == 'c') {
+        cout << "C --> c, ";
+        get_char ();
+    }
+    else {
+        throw myChar;}
+}
+
+int main () {
+    try {
+        cout << "input some chain of letters " << endl;
+        get_char ();
+        S ();
+        if (myChar != '#') {
+            throw myChar;}
+        cout << "OK =)"<< endl;
+        return 0;
+    }
+    catch (char myChar) {
+    cout << "ERROR on lexeme " << myChar << endl;
+    return 1;
+    }
+}
