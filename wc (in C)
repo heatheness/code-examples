@@ -101,10 +101,8 @@ int main (int argc, char *argv[]) {
                     /* если после слова был EOF нужно прибавить одно слово */
                     if (isword == 1) results[1]++;
                     
-                    /* считааем размер файла */
-                    struct stat st;
-                    stat(argv[i], &st);
-                    results[3] = st.st_size;
+                    /* считааем количество байт */
+                    results[3] = results[2] * sizeof(int);
                     
                     /* считаем общие результаты */
                     global_results[0] += results[0];
@@ -127,6 +125,7 @@ int main (int argc, char *argv[]) {
                 /* вывод имени файла */
                 printf ("%s\n",argv[i]);
             }
+            int c = fclose(current_file);
         }
     }
     
@@ -158,7 +157,7 @@ int main (int argc, char *argv[]) {
             /* находим слово */
             if (isspace(current_char)){
                 
-                /* проверяем на конец слов */
+                /* проверяем на конец слова */
                 if (isword == 1) {
                     results[1]++;
                     isword = 0;
