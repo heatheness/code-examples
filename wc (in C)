@@ -1,3 +1,4 @@
+
 /*
  
  аналог wc для ASCII файлов
@@ -20,7 +21,6 @@ unsigned short int mask;
 int results[5], global_results[5];
 int key,current_char, isword, isline, line_len, isfile, isopen;
 FILE *current_file;
-
 
 
 int main (int argc, char *argv[]) {
@@ -51,6 +51,7 @@ int main (int argc, char *argv[]) {
     /* обнуляем общие результаты */
     for (int j=0; j <= 5; j++) global_results[j] = 0;
     
+    /* проверяем параметры */
     for (int i=1; i<argc; i++) {
         if (argv[i][0] != '-') {
             isfile = 1;
