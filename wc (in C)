@@ -1,0 +1,201 @@
+/*
+ 
+ аналог wc для ASCII файлов
+ вывод результатов в формате:
+ line  word    char    byte    max line    file name
+ ...
+ line  word    char    byte    max line    total
+ 
+ если в качестве ключей указаны -m и -c, то выводятся оба соответствующих значения
+
+ */
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <ctype.h>
+
+
+unsigned short int mask;
+int results[5], global_results[5];
+int key,current_char, isword, isline, line_len, isfile, isopen;
+FILE *current_file;
+
+
+
+int main (int argc, char *argv[]) {
+    
+    /* создаем битовую маску для ключей */
+    while ((key = getopt(argc,argv, "Llmwc")) != -1){
+        switch (key) {
+            case 'l':
+                mask = mask | 1;
+                break;
+            case 'w':
+                mask = mask | 2;
+                break;
+            case 'm':
+                mask = mask | 4;
+                break;
+            case 'c':
+                mask = mask | 8;
+                break;
+            case 'L':
+                mask = mask | 16;
+                break;
+            case '?':
+                return 0;
+            }
+    }
+    
+    /* обнуляем общие результаты */
+    for (int j=0; j <= 5; j++) global_results[j] = 0;
+    
+    for (int i=1; i<argc; i++) {
+        if (argv[i][0] != '-') {
+            isfile = 1;
+            current_file = fopen (argv[i], "r");
+            if (current_file == NULL) {
+                printf ("ERROR while opening file %s\n", argv[i]);
+                continue;
+            }
+            else {
+                isopen = 1;
+                isline = 0;
+                isword = 0;
+                
+                /* обнуляем результаты для файла */
+                for (int j=0; j <= 5; j++) results[j] = 0;
+
+                /* изучаем файл */
+                while ((current_char = getc(current_file)) != EOF) {
+                    line_len++;
+                    results[2]++;
+                    
+                    /* находим слово */
+                    if (isspace(current_char)){
+                        
+                        /* проверяем на конец слов */
+                        if (isword == 1) {
+                            results[1]++;
+                            isword = 0;
+                        }
+                        
+                        /* проверяем на конец строки */
+                        if ((current_char) == ('\n')) {
+                            results[0]++;
+                            line_len ++;
+                            if (line_len > results[4]) results[4] = line_len;
+                            line_len = 0;
+                        }
+                    }
+                    else {
+                        if (isword == 0) isword = 1;
+                    }
+                }
+                
+                /* если файл непустой */
+                if (results[2] > 0) {
+                    
+                    /* если после слова был EOF нужно прибавить одно слово */
+                    if (isword == 1) results[1]++;
+                    
+                    /* считааем размер файла */
+                    struct stat st;
+                    stat(argv[i], &st);
+                    results[3] = st.st_size;
+                    
+                    /* считаем общие результаты */
+                    global_results[0] += results[0];
+                    global_results[1] += results[1];
+                    global_results[2] += results[2];
+                    global_results[3] += results[3];
+                    
+                    /* ищем максимальную длину строки во всех файлах */
+                    if (results[4] > global_results[4]) global_results[4] = results[4];
+                }
+                
+                /* вывод  результатов для файла */
+                for (int j=0; j <= 5; j++) {
+                    
+                    if ((mask >> j) & 1) {
+                        printf ("%d\t", results[j]);
+                    }
+                }
+                
+                /* вывод имени файла */
+                printf ("%s\n",argv[i]);
+            }
+        }
+    }
+    
+    /* если были открытые файлы - выводим результат и завершаем программу */
+    if (isfile) {
+        if (isopen) {
+            /* вывод  общих результатов */
+            for (int j=0; j <= 5; j++) {
+                if ((mask >> j) & 1) printf ("%d\t", global_results[j]);
+            }
+            printf ("total\n");
+        }
+        return 0;
+    }
+
+    /* если файлов не было - переключаемся на стандартный поток ввода */
+    else {
+        isline = 0;
+        isword = 0;
+        
+        /* обнуляем результаты для всех ключей */
+        for (int j=0; j <= 5; j++) results[j] = 0;
+        
+        /* изучаем поток */
+        while ((current_char = getchar()) != EOF) {
+            line_len++;
+            results[2]++;
+            
+            /* находим слово */
+            if (isspace(current_char)){
+                
+                /* проверяем на конец слов */
+                if (isword == 1) {
+                    results[1]++;
+                    isword = 0;
+                }
+                
+                /* проверяем на конец строки */
+                if ((current_char) == ('\n')) {
+                    results[0]++;
+                    line_len ++;
+                    if (line_len > results[4]) results[4] = line_len;
+                    line_len = 0;
+                }
+            }
+            
+            else {
+                if (isword == 0) isword = 1;
+            }
+        }
+        
+        /* если символов больше нуля */
+        if (results[2] > 0) {
+            
+            /* если после слова был EOF нужно прибавить одно слово */
+            if (isword == 1) results[1]++;
+            
+            /* считааем количество байт */
+            results[3] = results[2] * sizeof(int);
+        }
+        
+        /* вывод  результатов */
+        printf ("\n");
+        for (int j=0; j <= 5; j++) {
+            
+            if ((mask >> j) & 1) {
+                printf ("%d\t", results[j]);
+            }
+        }
+        printf ("\n");
+        return 0;
+    }
+}
