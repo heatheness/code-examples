@@ -57,7 +57,7 @@ int main (int argc, char *argv[]) {
             isfile = 1;
             current_file = fopen (argv[i], "r");
             if (current_file == NULL) {
-                printf ("ERROR while opening file %s\n", argv[i]);
+                perror(argv[i]);
                 continue;
             }
             else {
@@ -171,7 +171,6 @@ int main (int argc, char *argv[]) {
                     line_len = 0;
                 }
             }
-            
             else {
                 if (isword == 0) isword = 1;
             }
