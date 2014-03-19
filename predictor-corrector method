@@ -11,13 +11,13 @@ start_velocity = 30
 mass = 1
 alpha = 49
 friction_coefficient = 0.8
-delta_t = 0.01
+delta_t = 0.008
 
 def analitic_solving(start_velocity, mass, alpha, friction_coefficient, delta_t):
     """
     Аналитическое решение для задачи полета тела, брошенного под углом к горизонту, с учетом трения.
-    Возвращает лист всех координат тела в полете в формате:
-    [[координаты по x], [координаты по y]]
+    Возвращает лист всех координат тела в полете и максимальную высоту в формате:
+    [[координаты по x], [координаты по y], максимальная высота]
     """
 
     start_velocity = float(start_velocity)
@@ -78,6 +78,8 @@ def predictor_corrector(start_velocity, mass, alpha, friction_coefficient, delta
     ylist = [0]
     vx_0 = start_velocity*math.cos(alpha)
     vy_0 = start_velocity*math.sin(alpha)
+    xlist.append(vx_0 * delta_t)
+    ylist.append(vy_0 * delta_t)
     while True:
         vx_05 = vx_0 + 0.5 * delta_t * (-mu*vx_0)
         vx_1 = vx_0 + delta_t * (-mu*vx_05)
@@ -125,6 +127,6 @@ plt.grid()
 plt.xlabel(u'Дальность')
 plt.ylabel(u'Высота')
 plt.title(u'Полет тела, брошенного под углом к гаризонту')
-line_1, line_2 = plt.plot (pc_xlist, pc_ylist, analitic_xlist, analitic_ylist, linewidth = 2)
+line_1, line_2 = plt.plot (analitic_xlist, analitic_ylist, 'b-', pc_xlist, pc_ylist, 'g-', linewidth = 2)
 plt.legend ((line_1,line_2), (u'Аналитическое решение', u'Предиктор-корректор'), loc = 'best')
 plt.show()
