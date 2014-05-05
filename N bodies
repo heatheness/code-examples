@@ -1,0 +1,213 @@
+# -*- coding: utf-8 -*-
+
+
+import math
+from turtle import *
+
+# The gravitational constant G
+G = 6.67428e-11
+
+# Assumed scale: 100 pixels = 1AU.
+AU = (149.6e6 * 1000)     # 149.6 million km, in meters.
+SCALE = 150 / AU
+
+
+class State:
+    """Class representing position and velocity."""
+    def __init__(self,x, y, vx, vy):
+        self._x, self._y, self._vx, self._vy = x, y, vx, vy
+
+    def __repr__(self):
+        return 'x:{x} y:{y} vx:{vx} vy:{vy}'.format(
+            x=self._x, y=self._y, vx=self._vx, vy=self._vy)
+
+
+class Derivative:
+    """Class representing velocity and acceleration."""
+    def __init__(self, dx, dy, dvx, dvy):
+        self._dx, self._dy, self._dvx, self._dvy = dx, dy, dvx, dvy
+
+    def __repr__(self):
+        return 'dx:{dx} dy:{dy} dvx:{dvx} dvy:{dvy}'.format(
+            dx=self._dx, dy=self._dy, dvx=self._dvx, dvy=self._dvy)
+
+
+class Body(Turtle):
+    """Subclass of Turtle representing a gravitationally-acting body.
+
+    Extra attributes:
+    mass : mass in kg
+    vx, vy: x, y velocities in m/s
+    px, py: x, y positions in m
+    """
+
+    name = 'Body'
+    mass = None
+    vx = vy = 0.0
+    x = y = 0.0
+
+
+
+
+    def get_acceleration(self, x, y, bodies):
+        fx = fy = 0.0
+        for body in bodies:
+            if self == body:
+                continue
+            dx = body.x - x
+            dy = body.y - y
+            d = math.sqrt(dx**2 + dy**2)
+            if d == 0:
+                raise ValueError("Collision between objects %r and %r" % (self.name, body.name))
+            fx += G * self.mass * body.mass * dx / (d**3)
+            fy += G * self.mass * body.mass * dy / (d**3)
+
+        ax = fx / self.mass
+        ay = fy / self.mass
+
+        return ax, ay
+
+
+    def initialDerivative(self, state, bodies):
+        ax, ay = self.get_acceleration(state._x, state._y, bodies)
+        return Derivative(self.vx, self.vy, ax, ay)
+
+    def nextDerivative(self, derivative, dt,bodies):
+        state = State(0., 0., 0., 0.)
+        state._x = self.x + derivative._dx*dt
+        state._y = self.y + derivative._dy*dt
+        state._vx = self.vx + derivative._dvx*dt
+        state._vy = self.vy + derivative._dvy*dt
+        ax, ay = self.get_acceleration(state._x, state._y, bodies)
+        return Derivative(state._vx, state._vy, ax, ay)
+
+    def runge_kutta(self, dt,bodies):
+        state = State(self.x,self.y,self.vx,self.vy)
+        a = self.initialDerivative(state, bodies)
+        b = self.nextDerivative(a, dt*0.5,bodies)
+        c = self.nextDerivative(b, dt*0.5,bodies)
+        d = self.nextDerivative(c, dt,bodies)
+        dxdt = 1.0/6.0 * (a._dx + 2.0*(b._dx + c._dx) + d._dx)
+        dydt = 1.0/6.0 * (a._dy + 2.0*(b._dy + c._dy) + d._dy)
+        dvxdt = 1.0/6.0 * (a._dvx + 2.0*(b._dvx + c._dvx) + d._dvx)
+        dvydt = 1.0/6.0 * (a._dvy + 2.0*(b._dvy + c._dvy) + d._dvy)
+
+        new_x = self.x + dxdt*dt
+        new_y = self.y + dydt*dt
+        new_vx = self.vx + dvxdt*dt
+        new_vy = self.vy + dvydt*dt
+
+        return new_x,new_y,new_vx,new_vy
+
+
+def update_info(step, bodies):
+    """(int, [Body])
+
+    Displays information about the status of the simulation.
+    """
+    print('Step #{}'.format(step))
+    for body in bodies:
+        s = '{:<8}  Pos.={:>6.2f} {:>6.2f} Vel.={:>10.3f} {:>10.3f}'.format(
+            body.name, body.x/AU, body.y/AU, body.vx, body.vy)
+        print(s)
+    print()
+
+
+
+def loop(bodies):
+    """([Body])
+
+    Never returns; loops through the simulation, updating the
+    positions of all the provided bodies.
+    """
+    timestep = 24*3600 # One day
+
+    for body in bodies:
+        body.penup()
+        body.hideturtle()
+
+    step = 1
+
+
+    while True:
+        update_info(step, bodies)
+        step += 1
+
+
+        for body in bodies:
+
+            if body.name == 'Sun':
+                size = 15
+            else:
+                size = 3
+            # body.undo()
+            body.goto(body.x*SCALE, body.y*SCALE)
+            body.dot(size)
+            
+        # Update velocities based upon on the force.
+        for body in bodies:
+            body.temp_x, body.temp_y, body.temp_vx, body.temp_vy = body.runge_kutta(timestep, bodies)
+
+        for body in bodies:
+            body.x = body.temp_x
+            body.y = body.temp_y
+            body.vx = body.temp_vx
+            body.vy = body.temp_vy
+
+
+def main():
+
+
+    sun = Body()
+    sun.name = 'Sun'
+    sun.mass = 1.98892 * 10**30
+    sun.pencolor('yellow')
+
+    earth = Body()
+    earth.name = 'Earth'
+    earth.mass = 5.9742 * 10**24
+    earth.x = -1*AU
+    earth.vy = -29.783 * 1000          
+    earth.pencolor('blue')
+
+    venus = Body()
+    venus.name = 'Venus'
+    venus.mass = 4.8685 * 10**24
+    venus.x = 0.723 * AU
+    venus.vy = 35.02 * 1000
+    venus.pencolor('violet')
+
+    mercury = Body()
+    mercury.name = 'Mercury'
+    mercury.mass = 0.33 * 10**24
+    mercury.y = 0.387*AU
+    mercury.vx = -47.36 * 1000            
+    mercury.pencolor('green')
+
+
+    mars = Body()
+    mars.name = 'Mars'
+    mars.mass = 0.64 * 10**24
+    mars.y = -1.523*AU
+    mars.vx = 24.07 * 1000
+    mars.pencolor('red')
+
+    jupiter = Body()
+    jupiter.name = 'Jupiter'
+    jupiter.mass = 1898 * 10**24
+    jupiter.x = 5.2 * AU
+    jupiter.vy = 13.06 * 1000
+    jupiter.pencolor('purple')
+
+    saturn = Body()
+    saturn.name = 'Saturn'
+    saturn.mass = 586 * 10**24
+    saturn.y = -9.58 * AU
+    saturn.vx = 9.68 * 1000
+    saturn.pencolor('brown')
+
+    loop([sun, earth, venus, mercury, mars, jupiter, saturn])
+
+
+if __name__ == '__main__':
+    main()
