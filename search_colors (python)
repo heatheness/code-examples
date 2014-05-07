@@ -53,12 +53,15 @@ dic = {key:{'VERB':0,'NOUN':0, 'ADJF':0, 'PRTF':0, 'GRND':0, 'ADVB':0, 'INFN':0,
             'ADJS':0, 'COMP':0, 'COUNT':0} for key in list_of_colors}
 
 
-""" возвращает корень слов, обозначающих цвет, путем отбрасывания окончаний """
+two_char_endings = [u'ый', u'ий', u'ой']
+four_char_endings = [u'овый', u'евый']			
+			
+""" возвращает корень слов, обозначающих цвет, путем отбрасывания окончаний и суффиксов """
 def get_root(s):
-    if s.find (u'ый',-2) !=-1 or s.find (u'ий', -2)!=-1 or s.find (u'ой', -2)!=-1:
-        s = s[:-2:]
-    elif s.find(u'овый',-4) or s.find(u'евый',-4) !=-1:
-        s = s[:-4:]
+	if s[-4:] in four_char_endings:
+		s = s[:-4]
+	elif s[-2:] in two_char_endings:
+		s = s[:-2]
     return s
     
 """формирует словарь {корень : цвет}"""    
