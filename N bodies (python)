@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""N bodies problem solution with Runge-Kutta fourth-order method
+"""N bodies problem solution with Runge-Kutta fourth-order method.
 Primitive model of motion of some Solar System planets"""
 
 
